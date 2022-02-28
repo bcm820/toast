@@ -16,7 +16,7 @@ func (f *File) CUE() string {
 	for _, t := range f.Code {
 		code += t.GetDocs() + t.CUE() + "\n"
 	}
-	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.Package, imports, code))
+	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.cuePkgName, imports, code))
 	return string(src)[:len(src)-1]
 }
 

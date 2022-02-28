@@ -19,7 +19,7 @@ func (f *File) Go() string {
 	for _, t := range f.Code {
 		code += t.GetDocs() + t.Go() + "\n"
 	}
-	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.Package, imports, code))
+	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.pkgName, imports, code))
 	if f.debug {
 		return string(src)
 	}

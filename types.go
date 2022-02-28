@@ -17,16 +17,18 @@ type Type interface {
 }
 
 type Node interface {
-	// Renders JSON
+	// Renders JSON representation of the node.
 	Reflect() json.RawMessage
-	// Renders Go
+	// Renders Go type definitions.
 	Go() string
-	// Renders CUE
+	// Renders CUE definitions.
 	CUE() string
 }
 
 type File struct {
-	Package string
+	pkgName    string
+	cuePkgName string
+
 	Imports map[string]Import
 	Code    []Type
 
@@ -50,7 +52,7 @@ func (f *File) Reflect() json.RawMessage {
 	}
 	raw := fmt.Sprintf(
 		`{"package":"%s","imports":[%s],"code":[%s]}`,
-		f.Package, strings.Join(imports, ","), strings.Join(code, ","),
+		f.pkgName, strings.Join(imports, ","), strings.Join(code, ","),
 	)
 	if f.debug {
 		fmt.Println(raw)

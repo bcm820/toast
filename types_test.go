@@ -6,7 +6,7 @@ import (
 )
 
 var file = File{
-	Package: "mock",
+	pkgName: "mock",
 	Imports: map[string]Import{
 		"fmt":    {Path: "fmt"},
 		"loader": {Path: "github.com/bcmendoza/envoy-cue/pkg/loader"},

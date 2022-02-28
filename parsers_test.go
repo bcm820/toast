@@ -2,7 +2,6 @@ package toast
 
 import (
 	"fmt"
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
@@ -42,36 +41,7 @@ func load(t *testing.T, path, output string) {
 		t.Fatal(err)
 	}
 
-	f := FileFromAST(file, "", &GenEnumTypeTransform{
-		Generate: func(docs string, spec *ast.ValueSpec) *PromoteToEnumType {
-			etName := strings.Replace(docs, "// Enum value maps for ", "", 1)
-			if len(etName) == len(docs) ||
-				len(spec.Names) < 1 ||
-				!strings.HasSuffix(spec.Names[0].Name, "_name") ||
-				len(spec.Values) < 1 {
-				return nil
-			}
-
-			et := &EnumType{
-				Name: etName[:len(etName)-2],
-			}
-			for _, expr := range spec.Values[0].(*ast.CompositeLit).Elts {
-				v := expr.(*ast.KeyValueExpr).Value.(*ast.BasicLit).Value
-				et.Values = append(et.Values, strings.Replace(v, "\"", "", -1))
-			}
-
-			return &PromoteToEnumType{
-				Apply: func(pt *PlainType) *EnumType {
-					if pt.Name != et.Name {
-						return nil
-					}
-					et.Docs = pt.Docs
-					return et
-				},
-			}
-		},
-	})
-
+	f := FileFromAST(file, WithCUEPackageName("mockcue"))
 	// f.debug = true
 
 	outputPath := path[strings.LastIndex(path, "/")+1:]

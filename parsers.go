@@ -7,27 +7,15 @@ import (
 	"strings"
 )
 
-func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File {
-	if pkgName == "" {
-		pkgName = file.Name.Name
-	}
+func FileFromAST(file *ast.File, opts ...Option) *File {
 
 	f := &File{
-		Package: pkgName,
+		pkgName: file.Name.Name,
 		Imports: make(map[string]Import),
 	}
 
-	for _, t := range transforms {
-		switch tt := t.(type) {
-		case *CopyIntoStruct:
-			f.copies = append(f.copies, tt)
-		case *ExcludeImport:
-			f.eximports = append(f.eximports, tt)
-		case *GenEnumTypeTransform:
-			f.genEnumTrans = append(f.genEnumTrans, tt)
-		default:
-			f.trans = append(f.trans, t)
-		}
+	for _, opt := range opts {
+		opt(f)
 	}
 
 	for _, fileDecl := range file.Decls {
