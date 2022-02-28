@@ -13,10 +13,13 @@ func (f *File) Go() string {
 	for _, i := range f.Imports {
 		imports += i.Go()
 	}
+	if len(imports) > 0 {
+		imports = fmt.Sprintf("import (\n%s)\n\n", imports)
+	}
 	for _, t := range f.Code {
 		code += t.GetDocs() + t.Go() + "\n"
 	}
-	src := []byte(fmt.Sprintf("package %s\n\nimport (\n%s)\n\n%s", f.Package, imports, code))
+	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.Package, imports, code))
 	if f.debug {
 		return string(src)
 	}
@@ -52,6 +55,15 @@ func (s *StructType) Go() string {
 		fields += f.Go()
 	}
 	return fmt.Sprintf("type %s struct {\n%s}\n", s.Name, fields)
+}
+
+func (et *EnumType) Go() string {
+	str := fmt.Sprintf("type %s string\n\nconst (\n", et.Name)
+	for _, v := range et.Values {
+		str += fmt.Sprintf("  %s_%s = \"%s\"\n", et.Name, v, v)
+	}
+	str += ")\n"
+	return str
 }
 
 func (f *Field) Go() string {

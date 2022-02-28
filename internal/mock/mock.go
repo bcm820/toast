@@ -4,6 +4,25 @@ import (
 	"bytes"
 )
 
+// This is an enum type
+type MyEnumType int32
+
+// Enum value maps for MyEnumType.
+var (
+	MyEnumType_name = map[int32]string{
+		0: "ZERO",
+		1: "ONE",
+		2: "TWO",
+		3: "THREE",
+	}
+	MyEnumType_value = map[string]int32{
+		"ZERO":  0,
+		"ONE":   1,
+		"TWO":   2,
+		"THREE": 3,
+	}
+)
+
 // imported types
 type buf bytes.Buffer
 

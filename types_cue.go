@@ -10,11 +10,14 @@ func (f *File) CUE() string {
 	for _, i := range f.Imports {
 		imports += i.CUE()
 	}
+	if len(imports) > 0 {
+		imports = fmt.Sprintf("import (\n%s)\n\n", imports)
+	}
 	for _, t := range f.Code {
 		code += t.GetDocs() + t.CUE() + "\n"
 	}
-	src := []byte(fmt.Sprintf("package %s\n\nimport (\n%s)\n\n%s", f.Package, imports, code))
-	return string(src)
+	src := []byte(fmt.Sprintf("package %s\n\n%s%s", f.Package, imports, code))
+	return string(src)[:len(src)-1]
 }
 
 func (i *Import) CUE() string {
@@ -47,6 +50,18 @@ func (s *StructType) CUE() string {
 		fields += f.CUE()
 	}
 	return fmt.Sprintf("#%s: {\n%s}\n", s.Name, fields)
+}
+
+func (et *EnumType) CUE() string {
+	values := make([]string, 0, len(et.Values))
+	for _, v := range et.Values {
+		values = append(values, `"`+v+`"`)
+	}
+	str := "#" + et.Name + ": " + strings.Join(values, " | ") + "\n\n"
+	for _, v := range et.Values {
+		str += fmt.Sprintf("%s_%s: \"%s\"\n", et.Name, v, v)
+	}
+	return str
 }
 
 func (f *Field) CUE() string {

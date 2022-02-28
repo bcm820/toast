@@ -30,15 +30,17 @@ type File struct {
 	Imports map[string]Import
 	Code    []Type
 
-	transforms []Transform
-	copies     []*CopyIntoStruct
-	eximports  []*ExcludeImport
+	trans        []Transform
+	copies       []*CopyIntoStruct
+	eximports    []*ExcludeImport
+	genEnumTrans []*GenEnumTypeTransform
+	mkEnums      []*PromoteToEnumType
 
 	debug bool
 }
 
 func (f *File) Reflect() json.RawMessage {
-	imports := make([]string, len(f.Imports))
+	imports := make([]string, 0, len(f.Imports))
 	for _, imp := range f.Imports {
 		imports = append(imports, string(imp.Reflect()))
 	}
@@ -71,7 +73,7 @@ func (i *Import) Reflect() json.RawMessage {
 type PlainType struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
-	docs string
+	Docs string `json:"-"`
 }
 
 func (p *PlainType) Reflect() json.RawMessage {
@@ -83,7 +85,7 @@ type ArrayType struct {
 	Name   string `json:"name"`
 	Type   string `json:"type"`
 	Length int    `json:"length,omitempty"`
-	docs   string
+	Docs   string `json:"-"`
 }
 
 func (a *ArrayType) Reflect() json.RawMessage {
@@ -95,7 +97,7 @@ type MapType struct {
 	Name      string `json:"name"`
 	KeyType   string `json:"key_type"`
 	ValueType string `json:"value_type"`
-	docs      string
+	Docs      string `json:"-"`
 }
 
 func (m *MapType) Reflect() json.RawMessage {
@@ -106,7 +108,7 @@ func (m *MapType) Reflect() json.RawMessage {
 type StructType struct {
 	Name   string   `json:"name"`
 	Fields []*Field `json:"fields"`
-	docs   string
+	Docs   string   `json:"-"`
 }
 
 func (s *StructType) Reflect() json.RawMessage {
@@ -122,25 +124,40 @@ func (s *StructType) Reflect() json.RawMessage {
 	)
 }
 
+type EnumType struct {
+	Name   string   `json:"name"`
+	Values []string `json:"values"`
+	Docs   string   `json:"-"`
+}
+
+func (et *EnumType) Reflect() json.RawMessage {
+	raw, _ := json.Marshal(et)
+	return injectKind(string(raw), "enum")
+}
+
 func (p *PlainType) GetName() string  { return p.Name }
 func (a *ArrayType) GetName() string  { return a.Name }
 func (m *MapType) GetName() string    { return m.Name }
 func (s *StructType) GetName() string { return s.Name }
+func (et *EnumType) GetName() string  { return et.Name }
 
 func (p *PlainType) GetTypeNames() []string  { return []string{p.Type} }
 func (a *ArrayType) GetTypeNames() []string  { return []string{a.Type} }
 func (m *MapType) GetTypeNames() []string    { return []string{m.KeyType, m.ValueType} }
 func (s *StructType) GetTypeNames() []string { panic("not implemented") }
+func (et *EnumType) GetTypeNames() []string  { return []string{et.Name} }
 
-func (p *PlainType) SetTypeNames(tt []string)  { p.Type = tt[0] }
-func (a *ArrayType) SetTypeNames(tt []string)  { a.Type = tt[0] }
-func (m *MapType) SetTypeNames(tt []string)    { m.KeyType = tt[0]; m.ValueType = tt[1] }
-func (s *StructType) SetTypeNames(tt []string) { panic("not implemented") }
+func (p *PlainType) SetTypeNames(tt []string)   { p.Type = tt[0] }
+func (a *ArrayType) SetTypeNames(tt []string)   { a.Type = tt[0] }
+func (m *MapType) SetTypeNames(tt []string)     { m.KeyType = tt[0]; m.ValueType = tt[1] }
+func (s *StructType) SetTypeNames(tt []string)  { panic("not implemented") }
+func (et *EnumType) SetTypeNames(typs []string) { et.Name = typs[0] }
 
-func (p *PlainType) GetDocs() string  { return p.docs }
-func (a *ArrayType) GetDocs() string  { return a.docs }
-func (m *MapType) GetDocs() string    { return m.docs }
-func (s *StructType) GetDocs() string { return s.docs }
+func (p *PlainType) GetDocs() string  { return p.Docs }
+func (a *ArrayType) GetDocs() string  { return a.Docs }
+func (m *MapType) GetDocs() string    { return m.Docs }
+func (s *StructType) GetDocs() string { return s.Docs }
+func (et *EnumType) GetDocs() string  { return et.Docs }
 
 type Field struct {
 	Type
@@ -149,16 +166,15 @@ type Field struct {
 
 func (f *Field) Reflect() json.RawMessage {
 	raw := f.Type.Reflect()
-	tags := "{"
+	var tags []string
 	for k, v := range f.Tags {
-		tags += fmt.Sprintf(`"%s":"%s",`, k, strings.Join(v, ","))
+		tags = append(tags, fmt.Sprintf(`"%s":"%s"`, k, strings.Join(v, ",")))
 	}
-	tags += "}"
-	return json.RawMessage(fmt.Sprintf(`%s,"tags":%s}`, raw[:len(raw)-1], tags))
+	return json.RawMessage(fmt.Sprintf(`%s,"tags":{%s}}`, raw[:len(raw)-1], strings.Join(tags, ",")))
 }
 
 func injectKind(raw string, kind string) json.RawMessage {
-	return json.RawMessage(fmt.Sprintf(`%s"kind":"%s",%s`, raw[0:1], kind, raw[1:]))
+	return json.RawMessage(fmt.Sprintf(`{"kind":"%s",%s`, kind, raw[1:]))
 }
 
 func printJSON(raw json.RawMessage) {

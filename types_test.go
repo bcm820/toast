@@ -18,44 +18,44 @@ var file = File{
 			Type: "int",
 		},
 		&PlainType{
-			docs: "// a string\n",
+			Docs: "// a string\n",
 			Name: "mystr",
 			Type: "string",
 		},
 		&PlainType{
-			docs: "// multi-line\n// comment\n",
+			Docs: "// multi-line\n// comment\n",
 			Name: "myinterface",
 			Type: "interface{}",
 		},
 		&PlainType{
-			docs: "/* another multi-line\n comment */\n",
+			Docs: "/* another multi-line\n comment */\n",
 			Name: "mystr",
 			Type: "string",
 		},
 		&ArrayType{
-			docs: "// a slice\n",
+			Docs: "// a slice\n",
 			Name: "myslice",
 			Type: "int",
 		},
 		&ArrayType{
-			docs:   "// a fixed-length array\n",
+			Docs:   "// a fixed-length array\n",
 			Name:   "myarr",
 			Type:   "int",
 			Length: 5,
 		},
 		&MapType{
-			docs:      "// a string map\n",
+			Docs:      "// a string map\n",
 			Name:      "mymap",
 			KeyType:   "string",
 			ValueType: "int64",
 		},
 		&StructType{
-			docs: "// a struct\n",
+			Docs: "// a struct\n",
 			Name: "mystruct",
 			Fields: []*Field{
 				{
 					Type: &PlainType{
-						docs: "field1",
+						Docs: "// field1\n",
 						Name: "Field1",
 						Type: "int32",
 					},
@@ -65,7 +65,7 @@ var file = File{
 				},
 				{
 					Type: &ArrayType{
-						docs: "field2",
+						Docs: "// field2\n",
 						Name: "Field2",
 						Type: "bool",
 					},
@@ -75,7 +75,7 @@ var file = File{
 				},
 				{
 					Type: &MapType{
-						docs:      "field3",
+						Docs:      "// field3\n",
 						Name:      "Field3",
 						KeyType:   "int",
 						ValueType: "struct{}",
@@ -86,12 +86,12 @@ var file = File{
 				},
 				{
 					Type: &StructType{
-						docs: "field4",
+						Docs: "// field4\n",
 						Name: "Field4",
 						Fields: []*Field{
 							{
 								Type: &PlainType{
-									docs: "nestedfield",
+									Docs: "nestedfield",
 									Name: "NestedField",
 									Type: "int64",
 								},
@@ -107,6 +107,10 @@ var file = File{
 				},
 			},
 		},
+		&EnumType{
+			Name:   "MyEnum",
+			Values: []string{"MyEnum_A", "MyEnum_B", "MyEnum_C"},
+		},
 	},
 }
 
@@ -114,6 +118,10 @@ func TestReflect(t *testing.T) {
 	printJSON(file.Reflect())
 }
 
-func TestRender(t *testing.T) {
+func TestGo(t *testing.T) {
 	fmt.Println(file.Go())
+}
+
+func TestCUE(t *testing.T) {
+	fmt.Println(file.CUE())
 }

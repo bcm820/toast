@@ -23,8 +23,10 @@ func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File 
 			f.copies = append(f.copies, tt)
 		case *ExcludeImport:
 			f.eximports = append(f.eximports, tt)
+		case *GenEnumTypeTransform:
+			f.genEnumTrans = append(f.genEnumTrans, tt)
 		default:
-			f.transforms = append(f.transforms, t)
+			f.trans = append(f.trans, t)
 		}
 	}
 
@@ -41,21 +43,25 @@ func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File 
 							continue SPEC_LOOP
 						}
 					}
-					var impName string
 					imp := ImportFromSpec(ts)
-					if imp.Name != "" {
-						impName = imp.Name
-					} else {
+					impName := imp.Name
+					if imp.Name == "" {
 						impName = imp.Path[strings.LastIndex(imp.Path, "/")+1:]
 					}
 					f.Imports[impName] = imp
 				case *ast.TypeSpec:
 					if t := ParseExpr([]*ast.Ident{ts.Name}, docs, ts.Type); t != nil {
 						f.Code = append(f.Code, t)
-						for _, transform := range f.transforms {
+						for _, transform := range f.trans {
 							if ok := evalTransform(transform, t, f); !ok {
 								continue SPEC_LOOP
 							}
+						}
+					}
+				case *ast.ValueSpec:
+					for _, gen := range f.genEnumTrans {
+						if t := gen.Generate(docs, ts); t != nil {
+							f.mkEnums = append(f.mkEnums, t)
 						}
 					}
 				}
@@ -65,31 +71,36 @@ func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File 
 		}
 	}
 
+COPIES_LOOP:
 	for _, ci := range f.copies {
-		var structIdx int
+		structIdx := -1
+	CODE_LOOP:
 		for i, t := range f.Code {
 			if t.GetName() == ci.StructName {
 				structIdx = i
+				break CODE_LOOP
 			}
 		}
+		if structIdx == -1 {
+			break COPIES_LOOP
+		}
 		if st, ok := f.Code[structIdx].(*StructType); ok {
-			var fieldIdx int
+		FIELD_LOOP:
 			for i, field := range st.Fields {
 				if field.GetName() == ci.FieldToReplace {
-					fieldIdx = i
-					break
+					var fields []*Field
+					fields = append(fields, st.Fields[:i]...)
+					fields = append(fields, ci.with...)
+					fields = append(fields, st.Fields[i+1:]...)
+					st.Fields = fields
+					f.Code[structIdx] = st
+					break FIELD_LOOP
 				}
 			}
-			var fields []*Field
-			fields = append(fields, st.Fields[:fieldIdx]...)
-			fields = append(fields, ci.with...)
-			fields = append(fields, st.Fields[fieldIdx+1:]...)
-			st.Fields = fields
-			f.Code[structIdx] = st
 		}
 	}
 
-	for _, t := range f.Code {
+	for i, t := range f.Code {
 		switch tt := t.(type) {
 		case *StructType:
 			for _, field := range tt.Fields {
@@ -104,6 +115,14 @@ func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File 
 				}
 			}
 		default:
+			pt, ok := tt.(*PlainType)
+			if ok {
+				for _, mkEnum := range f.mkEnums {
+					if et := mkEnum.Apply(pt); et != nil {
+						f.Code[i] = et
+					}
+				}
+			}
 			for _, typ := range t.GetTypeNames() {
 				if dot := strings.Index(typ, "."); dot > -1 {
 					impName := strings.Replace(typ[:dot], "*", "", -1)
@@ -127,7 +146,7 @@ func FileFromAST(file *ast.File, pkgName string, transforms ...Transform) *File 
 
 func evalTransform(transform Transform, t Type, f *File) bool {
 	switch tt := transform.(type) {
-	case *AddFieldTransform:
+	case *GenFieldTransform:
 		if st, ok := t.(*StructType); ok {
 			for _, field := range st.Fields {
 				if gen := tt.Generate(st, field); gen != nil {
@@ -135,9 +154,9 @@ func evalTransform(transform Transform, t Type, f *File) bool {
 					switch gt := gen.(type) {
 					case *CopyIntoStruct:
 						f.copies = append(f.copies, gt)
-						f.transforms = append(f.transforms, gen)
+						f.trans = append(f.trans, gen)
 					default:
-						f.transforms = append(f.transforms, gen)
+						f.trans = append(f.trans, gen)
 					}
 				}
 			}
@@ -240,7 +259,7 @@ func ParseExpr(names []*ast.Ident, docs string, expr ast.Expr) Type {
 		return &PlainType{
 			Name: name,
 			Type: "interface{}",
-			docs: docs,
+			Docs: docs,
 		}
 	default:
 		log.Printf("ParseExpr: unhandled type %T for %s\n", expr, names)
@@ -250,24 +269,24 @@ func ParseExpr(names []*ast.Ident, docs string, expr ast.Expr) Type {
 }
 
 func PlainTypeFromIdent(name, docs string, i *ast.Ident) *PlainType {
-	return &PlainType{docs: docs, Name: name, Type: i.String()}
+	return &PlainType{Docs: docs, Name: name, Type: i.String()}
 }
 
 func PlainTypeFromSelectorExpr(name, docs string, s *ast.SelectorExpr) *PlainType {
-	return &PlainType{docs: docs, Name: name, Type: fmt.Sprintf("%s.%s", s.X, s.Sel)}
+	return &PlainType{Docs: docs, Name: name, Type: fmt.Sprintf("%s.%s", s.X, s.Sel)}
 }
 
 func PlainTypeFromStarExpr(name, docs string, star *ast.StarExpr) *PlainType {
-	return &PlainType{docs: docs, Name: name, Type: "*" + stringFromExpr(star.X)}
+	return &PlainType{Docs: docs, Name: name, Type: "*" + stringFromExpr(star.X)}
 }
 
 func ArrayTypeFromSpec(name, docs string, a *ast.ArrayType) *ArrayType {
-	return &ArrayType{docs: docs, Name: name, Type: stringFromExpr(a.Elt)}
+	return &ArrayType{Docs: docs, Name: name, Type: stringFromExpr(a.Elt)}
 }
 
 func MapTypeFromSpec(name, docs string, m *ast.MapType) *MapType {
 	return &MapType{
-		docs:      docs,
+		Docs:      docs,
 		Name:      name,
 		KeyType:   stringFromExpr(m.Key),
 		ValueType: stringFromExpr(m.Value),
@@ -276,7 +295,7 @@ func MapTypeFromSpec(name, docs string, m *ast.MapType) *MapType {
 
 func StructTypeFromSpec(name, docs string, s *ast.StructType) *StructType {
 	st := &StructType{
-		docs: docs,
+		Docs: docs,
 		Name: name,
 	}
 
