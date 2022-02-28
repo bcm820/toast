@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func FileFromAST(file *ast.File, opts ...Option) *File {
+func NewFile(file *ast.File, opts ...Option) *File {
 
 	f := &File{
 		pkgName: file.Name.Name,

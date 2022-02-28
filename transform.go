@@ -14,13 +14,6 @@ type ExcludeType struct {
 	Match func(Type) bool
 }
 
-type CopyIntoStruct struct {
-	StructName     string
-	FieldToReplace string
-	FromStructs    map[string]struct{}
-	with           []*Field
-}
-
 type ModifyType struct {
 	Apply func(Type) Type
 }
@@ -31,6 +24,13 @@ type ExcludeField struct {
 
 type ModifyField struct {
 	Apply func(*Field) *Field
+}
+
+type CopyIntoStruct struct {
+	StructName     string
+	FieldToReplace string
+	FromStructs    map[string]struct{}
+	with           []*Field
 }
 
 type GenFieldTransform struct {

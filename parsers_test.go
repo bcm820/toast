@@ -11,12 +11,12 @@ import (
 )
 
 func TestGoFileFromAST(t *testing.T) {
-	path := "./internal/mock"
+	path := "./mock"
 	loadFiles(t, path, "go")
 }
 
 func TestCUEFileFromAST(t *testing.T) {
-	path := "./internal/mock"
+	path := "./mock"
 	loadFiles(t, path, "cue")
 }
 
@@ -36,12 +36,12 @@ func loadFiles(t *testing.T, dirPath, output string) {
 
 func load(t *testing.T, path, output string) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	astFile, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	f := FileFromAST(file, WithCUEPackageName("mockcue"))
+	f := NewFile(astFile, WithCUEPackageName("mockcue"))
 	// f.debug = true
 
 	outputPath := path[strings.LastIndex(path, "/")+1:]
