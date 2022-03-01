@@ -19,6 +19,8 @@ func WithTransform(t Transform) Option {
 		switch tt := t.(type) {
 		case *ExcludeImport:
 			f.eximports = append(f.eximports, tt)
+		case *ModifyImport:
+			f.modimports = append(f.modimports, tt)
 		case *CopyIntoStruct:
 			f.copies = append(f.copies, tt)
 		case *GenEnumTypeTransform:

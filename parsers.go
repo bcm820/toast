@@ -26,17 +26,20 @@ func NewFile(file *ast.File, opts ...Option) *File {
 			for _, declSpec := range decl.Specs {
 				switch ts := declSpec.(type) {
 				case *ast.ImportSpec:
+					i := ImportFromSpec(ts)
 					for _, ei := range f.eximports {
-						if ei.Match(ImportFromSpec(ts)) {
+						if ei.Match(i) {
 							continue SPEC_LOOP
 						}
 					}
-					imp := ImportFromSpec(ts)
-					impName := imp.Name
-					if imp.Name == "" {
-						impName = imp.Path[strings.LastIndex(imp.Path, "/")+1:]
+					for _, mi := range f.modimports {
+						i = mi.Apply(i)
 					}
-					f.Imports[impName] = imp
+					impName := i.Name
+					if i.Name == "" {
+						impName = i.Path[strings.LastIndex(i.Path, "/")+1:]
+					}
+					f.Imports[impName] = i
 				case *ast.TypeSpec:
 					if t := ParseExpr([]*ast.Ident{ts.Name}, docs, ts.Type); t != nil {
 						f.Code = append(f.Code, t)

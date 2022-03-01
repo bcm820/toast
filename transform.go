@@ -10,6 +10,10 @@ type ExcludeImport struct {
 	Match func(Import) bool
 }
 
+type ModifyImport struct {
+	Apply func(Import) Import
+}
+
 type ExcludeType struct {
 	Match func(Type) bool
 }
@@ -45,12 +49,13 @@ type PromoteToEnumType struct {
 	Apply func(*PlainType) *EnumType
 }
 
-func (ei *ExcludeImport) isTransform()          {}
-func (et *ExcludeType) isTransform()            {}
-func (ef *ExcludeField) isTransform()           {}
-func (ci *CopyIntoStruct) isTransform()         {}
-func (mt *ModifyType) isTransform()             {}
-func (mf *ModifyField) isTransform()            {}
-func (gft *GenFieldTransform) isTransform()     {}
-func (gett *GenEnumTypeTransform) isTransform() {}
-func (ftet *PromoteToEnumType) isTransform()    {}
+func (*ExcludeImport) isTransform()        {}
+func (*ModifyImport) isTransform()         {}
+func (*ExcludeType) isTransform()          {}
+func (*ExcludeField) isTransform()         {}
+func (*CopyIntoStruct) isTransform()       {}
+func (*ModifyType) isTransform()           {}
+func (*ModifyField) isTransform()          {}
+func (*GenFieldTransform) isTransform()    {}
+func (*GenEnumTypeTransform) isTransform() {}
+func (*PromoteToEnumType) isTransform()    {}

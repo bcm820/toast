@@ -35,6 +35,7 @@ type File struct {
 	trans        []Transform
 	copies       []*CopyIntoStruct
 	eximports    []*ExcludeImport
+	modimports   []*ModifyImport
 	genEnumTrans []*GenEnumTypeTransform
 	mkEnums      []*PromoteToEnumType
 
