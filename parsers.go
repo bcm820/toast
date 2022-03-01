@@ -32,6 +32,7 @@ func NewFile(file *ast.File, opts ...Option) *File {
 							continue SPEC_LOOP
 						}
 					}
+					i.oldPath = i.Path
 					for _, mi := range f.modimports {
 						i = mi.Apply(i)
 					}

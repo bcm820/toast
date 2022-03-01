@@ -63,14 +63,19 @@ func (f *File) Reflect() json.RawMessage {
 }
 
 type Import struct {
-	Name string `json:"name,omitempty"`
-	Path string `json:"path"`
-	used bool
+	Name    string `json:"name,omitempty"`
+	Path    string `json:"path"`
+	oldPath string
+	used    bool
 }
 
 func (i *Import) Reflect() json.RawMessage {
 	raw, _ := json.Marshal(i)
 	return injectKind(string(raw), "import")
+}
+
+func (i *Import) GetOldPath() string {
+	return i.oldPath
 }
 
 type PlainType struct {
