@@ -22,17 +22,18 @@ declaration with a group of constants of the same type.
 
 When parsing a file, ToAST can apply a number of transformations on matching objects:
 * `ExcludeImport` excludes specific imports
+* `ModifyImport` mutates specific imports
 * `ExcludeType` excludes specific types
-* `ModifyType` mutates a specific type
-* `ExcludeField` excludes a specific field in a `StructType`
-* `ModifyField` mutates a specific field in a `StructType`
-* `CopyIntoStruct` copies fields from a number of named `StructType`s into a target `StructType`,
-  replacing a field
+* `ModifyType` mutates specific types
+* `ExcludeField` excludes specific fields in a `StructType`
+* `ModifyField` mutates specific fields in a `StructType`
+* `CopyIntoStruct` copies fields from one or more named `StructType`s into a target `StructType`,
+  replacing the field at of a given name
 * `PromoteToEnumType` converts a `PlainType` into an `EnumType`
-* `GenFieldTransform` takes a `StructType` and a `Field` and returns a `Transform` that can be
+* `GenFieldTransform` takes a `StructType` and a `Field` and returns some `Transform` that can be
   matched on subsequent nodes in the file
-* `GenEnumTypeTransform` takes a string and `ast.ValueSpec` (from _go/ast_) and returns a
-  `PromoteToEnumType` transform that can be matched on a `PlainType` in the file
+* `GenEnumTypeTransform` takes a string and `go/ast.ValueSpec` and returns a `PromoteToEnumType`
+  transform that can be matched on a `PlainType` in the file
 
 ## Usage
 
