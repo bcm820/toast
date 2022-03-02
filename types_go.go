@@ -3,6 +3,7 @@ package toast
 import (
 	"fmt"
 	"go/format"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/imports"
@@ -10,8 +11,13 @@ import (
 
 func (f *File) Go() string {
 	var imports, code string
+	impSlice := make([]string, 0, len(f.Imports))
 	for _, i := range f.Imports {
-		imports += i.Go()
+		impSlice = append(impSlice, i.Go())
+	}
+	sort.Strings(impSlice)
+	for _, imp := range impSlice {
+		imports += imp
 	}
 	if len(imports) > 0 {
 		imports = fmt.Sprintf("import (\n%s)\n\n", imports)
