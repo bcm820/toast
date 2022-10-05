@@ -73,12 +73,13 @@ func (et *EnumType) Go() string {
 }
 
 func (f *Field) Go() string {
-	tags := make([]string, len(f.Tags))
-	for k, v := range f.Tags {
-		tags = append(tags, fmt.Sprintf("%s:\"%s\"", k, strings.Join(v, ",")))
+	ts := f.Tags.Tags()
+	tags := make([]string, len(ts))
+	for _, t := range ts {
+		tags = append(tags, fmt.Sprintf("%s:\"%s\"", t.Key, t.Name))
 	}
 	var tag string
-	if len(f.Tags) > 0 {
+	if len(ts) > 0 {
 		tag = "`" + strings.TrimSpace(strings.Join(tags, " ")) + "`"
 	}
 	str := f.Type.Go()

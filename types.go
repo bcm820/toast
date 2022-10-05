@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"strings"
+
+	"github.com/fatih/structtag"
 )
 
 type Type interface {
@@ -169,14 +171,14 @@ func (et *EnumType) GetDocs() string  { return et.Docs }
 
 type Field struct {
 	Type
-	Tags map[string][]string
+	Tags *structtag.Tags
 }
 
 func (f *Field) Reflect() json.RawMessage {
 	raw := f.Type.Reflect()
 	var tags []string
-	for k, v := range f.Tags {
-		tags = append(tags, fmt.Sprintf(`"%s":"%s"`, k, strings.Join(v, ",")))
+	for _, t := range f.Tags.Tags() {
+		tags = append(tags, fmt.Sprintf(`"%s":"%s"`, t.Key, t.Name))
 	}
 	return json.RawMessage(fmt.Sprintf(`%s,"tags":{%s}}`, raw[:len(raw)-1], strings.Join(tags, ",")))
 }

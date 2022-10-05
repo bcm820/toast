@@ -2,7 +2,10 @@ module github.com/bcmendoza/toast
 
 go 1.17
 
-require golang.org/x/tools v0.1.9
+require (
+	github.com/fatih/structtag v1.2.0
+	golang.org/x/tools v0.1.9
+)
 
 require (
 	golang.org/x/mod v0.5.1 // indirect

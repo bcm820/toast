@@ -3,6 +3,8 @@ package toast
 import (
 	"fmt"
 	"testing"
+
+	"github.com/fatih/structtag"
 )
 
 var file = File{
@@ -59,9 +61,7 @@ var file = File{
 						Name: "Field1",
 						Type: "int32",
 					},
-					Tags: map[string][]string{
-						"json": {"field1"},
-					},
+					Tags: tagsMustParse(`json:"field1"`),
 				},
 				{
 					Type: &ArrayType{
@@ -69,9 +69,7 @@ var file = File{
 						Name: "Field2",
 						Type: "bool",
 					},
-					Tags: map[string][]string{
-						"json": {"field2"},
-					},
+					Tags: tagsMustParse(`json:"field2"`),
 				},
 				{
 					Type: &MapType{
@@ -80,9 +78,7 @@ var file = File{
 						KeyType:   "int",
 						ValueType: "struct{}",
 					},
-					Tags: map[string][]string{
-						"json": {"field3"},
-					},
+					Tags: tagsMustParse(`json:"field3"`),
 				},
 				{
 					Type: &StructType{
@@ -95,15 +91,11 @@ var file = File{
 									Name: "NestedField",
 									Type: "int64",
 								},
-								Tags: map[string][]string{
-									"json": {"nestedfield"},
-								},
+								Tags: tagsMustParse(`json:"nestedField"`),
 							},
 						},
 					},
-					Tags: map[string][]string{
-						"json": {"field4"},
-					},
+					Tags: tagsMustParse(`json:"field4"`),
 				},
 			},
 		},
@@ -112,6 +104,11 @@ var file = File{
 			Values: []string{"MyEnum_A", "MyEnum_B", "MyEnum_C"},
 		},
 	},
+}
+
+func tagsMustParse(tag string) *structtag.Tags {
+	tags, _ := structtag.Parse(tag)
+	return tags
 }
 
 func TestReflect(t *testing.T) {

@@ -5,9 +5,11 @@ import (
 	"go/ast"
 	"log"
 	"strings"
+
+	"github.com/fatih/structtag"
 )
 
-func NewFile(file *ast.File, opts ...Option) *File {
+func NewFile(file *ast.File, opts ...Option) (*File, error) {
 
 	f := &File{
 		pkgName: file.Name.Name,
@@ -42,7 +44,11 @@ func NewFile(file *ast.File, opts ...Option) *File {
 					}
 					f.Imports[impName] = i
 				case *ast.TypeSpec:
-					if t := ParseExpr([]*ast.Ident{ts.Name}, docs, ts.Type); t != nil {
+					t, err := ParseExpr([]*ast.Ident{ts.Name}, docs, ts.Type)
+					if err != nil {
+						return nil, err
+					}
+					if t != nil {
 						f.Code = append(f.Code, t)
 						for _, transform := range f.trans {
 							if ok := evalTransform(transform, t, f); !ok {
@@ -133,7 +139,7 @@ COPIES_LOOP:
 		}
 	}
 
-	return f
+	return f, nil
 }
 
 func evalTransform(transform Transform, t Type, f *File) bool {
@@ -229,22 +235,22 @@ func DocsFromCommentGroup(cg *ast.CommentGroup) string {
 	return strings.Join(docs, "\n") + "\n"
 }
 
-func ParseExpr(names []*ast.Ident, docs string, expr ast.Expr) Type {
+func ParseExpr(names []*ast.Ident, docs string, expr ast.Expr) (Type, error) {
 	var name string
 	if len(names) > 0 {
 		name = names[0].Name
 	}
 	switch expr := expr.(type) {
 	case *ast.Ident:
-		return PlainTypeFromIdent(name, docs, expr)
+		return PlainTypeFromIdent(name, docs, expr), nil
 	case *ast.SelectorExpr:
-		return PlainTypeFromSelectorExpr(name, docs, expr)
+		return PlainTypeFromSelectorExpr(name, docs, expr), nil
 	case *ast.StarExpr:
-		return PlainTypeFromStarExpr(name, docs, expr)
+		return PlainTypeFromStarExpr(name, docs, expr), nil
 	case *ast.ArrayType:
-		return ArrayTypeFromSpec(name, docs, expr)
+		return ArrayTypeFromSpec(name, docs, expr), nil
 	case *ast.MapType:
-		return MapTypeFromSpec(name, docs, expr)
+		return MapTypeFromSpec(name, docs, expr), nil
 	case *ast.StructType:
 		return StructTypeFromSpec(name, docs, expr)
 	case *ast.InterfaceType:
@@ -252,12 +258,12 @@ func ParseExpr(names []*ast.Ident, docs string, expr ast.Expr) Type {
 			Name: name,
 			Type: "interface{}",
 			Docs: docs,
-		}
+		}, nil
 	default:
 		log.Printf("ParseExpr: unhandled type %T for %s\n", expr, names)
 	}
 
-	return nil
+	return nil, fmt.Errorf("unknown type")
 }
 
 func PlainTypeFromIdent(name, docs string, i *ast.Ident) *PlainType {
@@ -285,7 +291,7 @@ func MapTypeFromSpec(name, docs string, m *ast.MapType) *MapType {
 	}
 }
 
-func StructTypeFromSpec(name, docs string, s *ast.StructType) *StructType {
+func StructTypeFromSpec(name, docs string, s *ast.StructType) (*StructType, error) {
 	st := &StructType{
 		Docs: docs,
 		Name: name,
@@ -293,30 +299,36 @@ func StructTypeFromSpec(name, docs string, s *ast.StructType) *StructType {
 
 FIELD_LOOP:
 	for _, f := range s.Fields.List {
-		field := FieldFromSpec(f)
+		field, err := FieldFromSpec(f)
+		if err != nil {
+			return nil, err
+		}
 		if field.Type == nil {
 			continue FIELD_LOOP
 		}
 		st.Fields = append(st.Fields, field)
 	}
 
-	return st
+	return st, nil
 }
 
-func FieldFromSpec(f *ast.Field) *Field {
+func FieldFromSpec(f *ast.Field) (*Field, error) {
 	docs := DocsFromCommentGroup(f.Doc)
+	typ, err := ParseExpr(f.Names, docs, f.Type)
+	if err != nil {
+		return nil, err
+	}
 	field := &Field{
-		Type: ParseExpr(f.Names, docs, f.Type),
-		Tags: make(map[string][]string),
+		Type: typ,
 	}
 	if f.Tag != nil {
-		for _, tag := range strings.Split(strings.Replace(f.Tag.Value, "`", "", -1), " ") {
-			split := strings.Split(tag, ":")
-			split[1] = strings.Trim(split[1], "\"")
-			field.Tags[split[0]] = strings.Split(split[1], ",")
+		tags, err := structtag.Parse(f.Tag.Value)
+		if err != nil {
+			return nil, err
 		}
+		field.Tags = tags
 	}
-	return field
+	return field, nil
 }
 
 func stringFromExpr(e ast.Expr) string {

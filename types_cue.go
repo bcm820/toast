@@ -71,12 +71,17 @@ func (et *EnumType) CUE() string {
 }
 
 func (f *Field) CUE() string {
-	if len(f.Tags) == 0 {
+	ts := f.Tags.Tags()
+	if len(ts) == 0 {
 		return ""
 	}
-	jsonTags := f.Tags["json"]
-	name := jsonTags[0]
-	if len(jsonTags) > 1 && jsonTags[1] == "omitempty" {
+	jsonTag, _ := f.Tags.Get("json")
+	if jsonTag == nil {
+		return ""
+	}
+
+	name := jsonTag.Name
+	if jsonTag.HasOption("omitempty") {
 		name += "?"
 	}
 

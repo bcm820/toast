@@ -41,7 +41,7 @@ func load(t *testing.T, path, output string) {
 		t.Fatal(err)
 	}
 
-	f := NewFile(astFile, WithCUEPackageName("mockcue"))
+	f, _ := NewFile(astFile, WithCUEPackageName("mockcue"))
 	// f.debug = true
 
 	outputPath := path[strings.LastIndex(path, "/")+1:]
