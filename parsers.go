@@ -322,9 +322,9 @@ func FieldFromSpec(f *ast.Field) (*Field, error) {
 		Type: typ,
 	}
 	if f.Tag != nil {
-		tags, err := structtag.Parse(f.Tag.Value)
+		tags, err := structtag.Parse(f.Tag.Value[1 : len(f.Tag.Value)-1])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", err, f.Tag.Value)
 		}
 		field.Tags = tags
 	}
