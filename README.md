@@ -23,7 +23,8 @@ declaration with a group of constants of the same type.
 When parsing a file, ToAST can apply a number of transformations on matching objects:
 * `ExcludeImport` excludes specific imports
 * `ModifyImport` mutates specific imports
-* `ExcludeType` excludes specific types
+* `ExcludeTypeDecl` excludes specific type declarations
+* `ExcludeType` excludes specific type declarations and references
 * `ModifyType` mutates specific types
 * `ExcludeField` excludes specific fields in a `StructType`
 * `ModifyField` mutates specific fields in a `StructType`

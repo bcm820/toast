@@ -14,6 +14,10 @@ type ModifyImport struct {
 	Apply func(Import) Import
 }
 
+type ExcludeTypeDecl struct {
+	Match func(Type) bool
+}
+
 type ExcludeType struct {
 	Match func(Type) bool
 }
@@ -51,6 +55,7 @@ type PromoteToEnumType struct {
 
 func (*ExcludeImport) isTransform()        {}
 func (*ModifyImport) isTransform()         {}
+func (*ExcludeTypeDecl) isTransform()      {}
 func (*ExcludeType) isTransform()          {}
 func (*ExcludeField) isTransform()         {}
 func (*CopyIntoStruct) isTransform()       {}

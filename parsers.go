@@ -159,6 +159,11 @@ func evalTransform(transform Transform, t Type, f *File) bool {
 				}
 			}
 		}
+	case *ExcludeTypeDecl:
+		if tt.Match(t) {
+			f.Code = f.Code[:len(f.Code)-1]
+			return false
+		}
 	case *ExcludeType:
 		if tt.Match(t) {
 			f.Code = f.Code[:len(f.Code)-1]
