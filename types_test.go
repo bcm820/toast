@@ -11,8 +11,8 @@ var file = File{
 	pkgName: "mock",
 	Imports: map[string]Import{
 		"fmt":    {Path: "fmt"},
-		"loader": {Path: "github.com/bcmendoza/envoy-cue/pkg/loader"},
-		"m":      {Name: "m", Path: "github.com/bcmendoza/envoy-cue/pkg/toast/mock"},
+		"loader": {Path: "github.com/bcm820/envoy-cue/pkg/loader"},
+		"m":      {Name: "m", Path: "github.com/bcm820/envoy-cue/pkg/toast/mock"},
 	},
 	Code: []Type{
 		&PlainType{

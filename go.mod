@@ -1,6 +1,6 @@
-module github.com/bcmendoza/toast
+module github.com/bcm820/toast
 
-go 1.17
+go 1.22
 
 require (
 	github.com/fatih/structtag v1.2.0
