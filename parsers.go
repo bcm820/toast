@@ -202,7 +202,7 @@ func evalTransform(transform Transform, t Type, f *File) bool {
 			for i, field := range mpt.Fields {
 				mpt.Fields[i].Type = tt.Apply(field.Type)
 			}
-			f.Code[len(f.Code)-1] = mpt
+			f.Code[len(f.Code)-1] = tt.Apply(mpt)
 		default:
 			f.Code[len(f.Code)-1] = tt.Apply(mpt)
 		}
